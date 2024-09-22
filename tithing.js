@@ -1,8 +1,22 @@
 const puppeteer = require('puppeteer');
 require('dotenv').config();
 
+// This function checks for required environment variables
+function checkEnvVariables() {
+    if (!process.env.CHURCH_USERNAME || !process.env.CHURCH_PASSWORD) {
+        console.error('Error: Please create a .env file with CHURCH_USERNAME and CHURCH_PASSWORD defined.');
+        console.error('Example .env file content:');
+        console.error('CHURCH_USERNAME=your_username');
+        console.error('CHURCH_PASSWORD=your_password');
+        process.exit(1);  // Exit the script with an error status
+    }
+}
+
 async function automateDonation(tithingAmount = '1') {
-    const browser = await puppeteer.launch({ headless: true });
+    // Ensure environment variables are set before proceeding
+    checkEnvVariables();
+
+    const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
 
     console.log("Browser launched...");
@@ -31,7 +45,7 @@ async function automateDonation(tithingAmount = '1') {
     }
 
     await page.waitForSelector('input[name="txt"]');
-    await page.type('input[name="txt"]', tithingAmount);  // Use the provided tithing amount
+    await page.type('input[name="txt"]', tithingAmount);
     console.log(`Entered tithing amount: ${tithingAmount}`);
 
     try {
@@ -70,7 +84,7 @@ async function automateDonation(tithingAmount = '1') {
                 for (let i = 0; i < 3; i++) {
                     await page.click('a[data-qa="nextStepButton"]');
                     console.log(`Retry ${i + 1}: Clicked Next Step button.`);
-                    await new Promise(resolve => setTimeout(resolve, 2000));  // delay between retries
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                 }
             } catch (retryError) {
                 console.error('Retry click failed:', retryError);
@@ -89,7 +103,7 @@ async function automateDonation(tithingAmount = '1') {
                 console.log('Successfully moved to step 3 page.');
                 return;
             }
-            await new Promise(resolve => setTimeout(resolve, 5000));  // 5 second delay between retries
+            await new Promise(resolve => setTimeout(resolve, 5000));
         }
         console.log('Failed to move to step 3 after multiple retries.');
     }
@@ -109,7 +123,7 @@ async function automateDonation(tithingAmount = '1') {
 
         // Check if the final confirmation page is loaded
         const confirmationUrl = 'https://donations.churchofjesuschrist.org/donations/#/donation/thankyou';
-        const confirmationMessageSelector = 'h1.confirmation-message';  // Example selector for confirmation message
+        const confirmationMessageSelector = 'h1.confirmation-message';
 
         try {
             // Wait for either the confirmation URL or a confirmation message
