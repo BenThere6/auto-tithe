@@ -12,6 +12,22 @@ function checkEnvVariables() {
     }
 }
 
+// This function checks for the "Unable to sign in" error after attempting login
+async function checkForLoginError(page, browser) {  // pass the browser as a parameter
+    try {
+        const errorElement = await page.waitForSelector('div.okta-form-infobox-error.infobox.infobox-error', { timeout: 5000 });
+        if (errorElement) {
+            const errorMessage = await page.$eval('div.okta-form-infobox-error.infobox.infobox-error p', el => el.textContent);
+            console.error(`Login failed: ${errorMessage}`);
+            await browser.close();
+            return true;  // Return true to indicate that a login error occurred
+        }
+    } catch (error) {
+        console.log('Login successful, proceeding to the donations page.');
+        return false;  // Return false to indicate no login error
+    }
+}
+
 async function automateDonation(tithingAmount = '1') {
     // Ensure environment variables are set before proceeding
     checkEnvVariables();
@@ -39,9 +55,16 @@ async function automateDonation(tithingAmount = '1') {
         const password = process.env.CHURCH_PASSWORD;
         await page.type('#input53', password);
         await page.click('input.button-primary[type="submit"]');
-        await page.waitForNavigation();
-        console.log('Login successful, navigating to donations page.');
-        await page.goto('https://donations.churchofjesuschrist.org/donations/#/donation/step1', { waitUntil: 'networkidle2' });
+
+        // Check for login error after clicking "Verify"
+        const loginFailed = await checkForLoginError(page, browser);
+        if (loginFailed) {
+            return;  // Stop the script if login failed
+        } else {
+            await page.waitForNavigation();
+            console.log('Login successful, navigating to donations page.');
+            await page.goto('https://donations.churchofjesuschrist.org/donations/#/donation/step1', { waitUntil: 'networkidle2' });
+        }
     }
 
     await page.waitForSelector('input[name="txt"]');
