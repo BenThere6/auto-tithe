@@ -146,7 +146,7 @@ async function automateDonation(tithingAmount = '1') {
 
         // Check if the final confirmation page is loaded
         const confirmationUrl = 'https://donations.churchofjesuschrist.org/donations/#/donation/thankyou';
-        const confirmationMessageSelector = 'h1.confirmation-message';
+        const confirmationMessageSelector = 'h2[data-qa="confirmationText"]';
 
         try {
             // Wait for either the confirmation URL or a confirmation message
